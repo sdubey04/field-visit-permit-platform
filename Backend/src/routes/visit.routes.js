@@ -1,6 +1,8 @@
 const express = require("express");
 const authenticate = require("../middleware/auth.middleware");
 
+const validateVisit = require("../middleware/validate.middleware");
+
 const {
   createVisit,
   listVisits,
@@ -15,11 +17,11 @@ const router = express.Router();
 
 router.use(authenticate);
 
-router.post("/", createVisit);
+router.post("/", validateVisit, createVisit);
 router.get("/", listVisits);
 router.get("/:id", getVisitById);
 
-router.put("/:id", updateVisit);
+router.put("/:id", validateVisit, updateVisit);
 router.post("/:id/submit", submitVisit);
 router.post("/:id/decision", decideVisit);
 router.post("/:id/complete", completeVisit);
