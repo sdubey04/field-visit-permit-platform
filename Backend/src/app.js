@@ -7,6 +7,7 @@ const authRoutes = require("./routes/auth.routes");
 const authenticate = require("./middleware/auth.middleware");
 const authorize = require("./middleware/authorize.middleware");
 const visitRoutes = require("./routes/visit.routes");
+const summaryRoutes = require("./routes/summary.routes");
 
 const app = express();
 
@@ -15,6 +16,8 @@ app.use(express.json());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/visits", visitRoutes);
+
+app.use("/api/summary", summaryRoutes);
 
 app.get("/", (req, res) => {
   res.json({ message: "Field Visit API is running" });
