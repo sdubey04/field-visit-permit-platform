@@ -6,6 +6,7 @@ const cors = require("cors");
 const authRoutes = require("./routes/auth.routes");
 const authenticate = require("./middleware/auth.middleware");
 const authorize = require("./middleware/authorize.middleware");
+const visitRoutes = require("./routes/visit.routes");
 
 const app = express();
 
@@ -13,6 +14,7 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/api/auth", authRoutes);
+app.use("/api/visits", visitRoutes);
 
 app.get("/", (req, res) => {
   res.json({ message: "Field Visit API is running" });
