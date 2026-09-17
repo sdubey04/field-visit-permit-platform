@@ -4,25 +4,25 @@ VALUES
 (
     'Field Officer 1',
     'fieldofficer1@eaii.org',
-    '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+    '$2b$10$b.BSieG2PaKoddWR/LFtEeIny2OJ55cCKiao9cb2sExn7EUxBQlF6',
     'FIELD_OFFICER'
 ),
 (
     'Field Officer 2',
     'fieldofficer2@eaii.org',
-    '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+    '$2b$10$sacuSvt2pTSCWCthlahZoeWOT6.D/J.ql1aqxc0BfD9qlXjV.v6oG',
     'FIELD_OFFICER'
 ),
 (
     'HQ Approver 1',
     'approver1@eaii.org',
-    '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+    '$2b$10$sKdAsO5C9VBIFu/AbdFiA.p3vkff/tlZ8B2FJTjdnwOsfOcs/vvWm',
     'HQ_APPROVER'
 ),
 (
     'System Admin 1',
     'admin1@eaii.org',
-    '$2b$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy',
+    '$2b$10$qnPQj2ZyovUgJaGdJ293NO8o5R2IvOq6scyrLUw/V3.boKyggg1KC',
     'ADMIN'
 );
 
