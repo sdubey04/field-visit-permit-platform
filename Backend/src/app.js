@@ -5,6 +5,7 @@ const cors = require("cors");
 
 const authRoutes = require("./routes/auth.routes");
 const authenticate = require("./middleware/auth.middleware");
+const authorize = require("./middleware/authorize.middleware");
 
 const app = express();
 
@@ -23,5 +24,32 @@ app.get("/api/protected", authenticate, (req, res) => {
     user: req.user,
   });
 });
+
+app.get(
+  "/api/officer-test",
+  authenticate,
+  authorize("FIELD_OFFICER"),
+  (req, res) => {
+    res.json({ message: "Officer access granted" });
+  }
+);
+
+app.get(
+  "/api/hq-test",
+  authenticate,
+  authorize("HQ_APPROVER", "ADMIN"),
+  (req, res) => {
+    res.json({ message: "HQ access granted" });
+  }
+);
+
+app.get(
+  "/api/admin-test",
+  authenticate,
+  authorize("ADMIN"),
+  (req, res) => {
+    res.json({ message: "Admin access granted" });
+  }
+);
 
 module.exports = app;
