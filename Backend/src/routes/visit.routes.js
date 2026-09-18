@@ -3,6 +3,10 @@ const authenticate = require("../middleware/auth.middleware");
 
 const validateVisit = require("../middleware/validate.middleware");
 
+
+const authorize = require("../middleware/authorize.middleware");
+
+
 const {
   createVisit,
   listVisits,
@@ -17,7 +21,12 @@ const router = express.Router();
 
 router.use(authenticate);
 
-router.post("/", validateVisit, createVisit);
+router.post(
+  "/",
+  authorize("FIELD_OFFICER"),
+  validateVisit,
+  createVisit
+);
 router.get("/", listVisits);
 router.get("/:id", getVisitById);
 
