@@ -20,3 +20,58 @@ export const loginUser = async (email, password) => {
 
   return data;
 };
+
+
+export const getVisits = async ({
+  token,
+  status = "",
+  locationId = "",
+  page = 1,
+  limit = 5,
+}) => {
+  const params = new URLSearchParams();
+
+  params.set("page", page);
+  params.set("limit", limit);
+
+  if (status) {
+    params.set("status", status);
+  }
+
+  if (locationId) {
+    params.set("location_id", locationId);
+  }
+
+  const response = await fetch(
+    `${API_BASE_URL}/visits?${params.toString()}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to fetch visits");
+  }
+
+  return data;
+};
+
+export const getLocations = async (token) => {
+  const response = await fetch(`${API_BASE_URL}/locations`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to fetch locations");
+  }
+
+  return data;
+};
