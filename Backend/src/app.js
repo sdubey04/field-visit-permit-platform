@@ -22,43 +22,45 @@ app.use("/api/summary", summaryRoutes);
 
 app.use("/api/locations", locationRoutes);
 
-app.get("/", (req, res) => {
+app.get("/", authenticate,(req, res) => {
   res.json({ message: "Field Visit API is running" });
 });
 
-app.get("/api/protected", authenticate, (req, res) => {
-  res.json({
-    message: "You are authenticated",
-    user: req.user,
-  });
-});
+//Created only for testing purpose during the development
 
-app.get(
-  "/api/officer-test",
-  authenticate,
-  authorize("FIELD_OFFICER"),
-  (req, res) => {
-    res.json({ message: "Officer access granted" });
-  }
-);
+// app.get("/api/protected", authenticate, (req, res) => {
+//   res.json({
+//     message: "You are authenticated",
+//     user: req.user,
+//   });
+// });
 
-app.get(
-  "/api/hq-test",
-  authenticate,
-  authorize("HQ_APPROVER", "ADMIN"),
-  (req, res) => {
-    res.json({ message: "HQ access granted" });
-  }
-);
+// app.get(
+//   "/api/officer-test",
+//   authenticate,
+//   authorize("FIELD_OFFICER"),
+//   (req, res) => {
+//     res.json({ message: "Officer access granted" });
+//   }
+// );
 
-app.get(
-  "/api/admin-test",
-  authenticate,
-  authorize("ADMIN"),
-  (req, res) => {
-    res.json({ message: "Admin access granted" });
-  }
-);
+// app.get(
+//   "/api/hq-test",
+//   authenticate,
+//   authorize("HQ_APPROVER", "ADMIN"),
+//   (req, res) => {
+//     res.json({ message: "HQ access granted" });
+//   }
+// );
+
+// app.get(
+//   "/api/admin-test",
+//   authenticate,
+//   authorize("ADMIN"),
+//   (req, res) => {
+//     res.json({ message: "Admin access granted" });
+//   }
+// );
 
 app.use((req, res) => {
   res.status(404).json({
