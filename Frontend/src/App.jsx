@@ -1,5 +1,10 @@
 import { useEffect, useState } from "react";
-import { getLocations, getVisits, loginUser } from "./api";
+import {
+  createVisit,
+  getLocations,
+  getVisits,
+  loginUser,
+} from "./api";
 
 function App() {
   const [user, setUser] = useState(
@@ -22,6 +27,19 @@ function App() {
   const [visitError, setVisitError] = useState("");
 
   const token = localStorage.getItem("token");
+
+
+const [visitForm, setVisitForm] = useState({
+  title: "",
+  purpose: "",
+  location_id: "",
+  planned_date: "",
+  estimated_cost: "",
+});
+
+const [createError, setCreateError] = useState("");
+const [createSuccess, setCreateSuccess] = useState("");
+const [creating, setCreating] = useState(false);
 
   useEffect(() => {
     if (!user || !token) {
@@ -107,6 +125,62 @@ function App() {
     setPage(1);
   };
 
+
+  const handleVisitFormChange = (event) => {
+  const { name, value } = event.target;
+
+  setVisitForm((current) => ({
+    ...current,
+    [name]: value,
+  }));
+};
+
+const handleCreateVisit = async (event) => {
+  event.preventDefault();
+
+  setCreateError("");
+  setCreateSuccess("");
+  setCreating(true);
+
+  try {
+    await createVisit(token, {
+      title: visitForm.title,
+      purpose: visitForm.purpose,
+      location_id: Number(visitForm.location_id),
+      planned_date: visitForm.planned_date,
+      estimated_cost: Number(visitForm.estimated_cost),
+    });
+
+    setVisitForm({
+      title: "",
+      purpose: "",
+      location_id: "",
+      planned_date: "",
+      estimated_cost: "",
+    });
+
+    setCreateSuccess("Visit created successfully as DRAFT.");
+
+    setPage(1);
+
+    const data = await getVisits({
+      token,
+      status,
+      locationId,
+      page: 1,
+      limit: 5,
+    });
+
+    setVisits(data.data);
+  } catch (error) {
+    setCreateError(error.message);
+  } finally {
+    setCreating(false);
+  }
+};
+
+
+
   if (!user) {
     return (
       <div>
@@ -162,6 +236,105 @@ function App() {
       <button onClick={handleLogout}>Logout</button>
 
       <hr />
+
+
+{user.role === "FIELD_OFFICER" && (
+  <>
+    <h2>Create Visit</h2>
+
+    <form onSubmit={handleCreateVisit}>
+      <div>
+        <label>Title</label>
+        <br />
+        <input
+          name="title"
+          value={visitForm.title}
+          onChange={handleVisitFormChange}
+          required
+        />
+      </div>
+
+      <br />
+
+      <div>
+        <label>Purpose</label>
+        <br />
+        <textarea
+          name="purpose"
+          value={visitForm.purpose}
+          onChange={handleVisitFormChange}
+          required
+        />
+      </div>
+
+      <br />
+
+      <div>
+        <label>Location</label>
+        <br />
+
+        <select
+          name="location_id"
+          value={visitForm.location_id}
+          onChange={handleVisitFormChange}
+          required
+        >
+          <option value="">Select location</option>
+
+          {locations.map((location) => (
+            <option key={location.id} value={location.id}>
+              {location.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <br />
+
+      <div>
+        <label>Planned Date</label>
+        <br />
+
+        <input
+          type="date"
+          name="planned_date"
+          value={visitForm.planned_date}
+          onChange={handleVisitFormChange}
+          required
+        />
+      </div>
+
+      <br />
+
+      <div>
+        <label>Estimated Cost</label>
+        <br />
+
+        <input
+          type="number"
+          min="0"
+          step="0.01"
+          name="estimated_cost"
+          value={visitForm.estimated_cost}
+          onChange={handleVisitFormChange}
+          required
+        />
+      </div>
+
+      <br />
+
+      <button type="submit" disabled={creating}>
+        {creating ? "Creating..." : "Create Visit"}
+      </button>
+    </form>
+
+    {createError && <p>{createError}</p>}
+    {createSuccess && <p>{createSuccess}</p>}
+
+    <hr />
+  </>
+)}
+
 
       <h2>Visits</h2>
 
