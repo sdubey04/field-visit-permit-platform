@@ -112,3 +112,29 @@ export const getVisitById = async (token, visitId) => {
 
   return data;
 };
+
+
+export const decideVisit = async (token, visitId, decision, remark) => {
+  const response = await fetch(
+    `${API_BASE_URL}/visits/${visitId}/decision`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        decision,
+        remark,
+      }),
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to process decision");
+  }
+
+  return data;
+};

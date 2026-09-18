@@ -5,6 +5,7 @@ import {
   getVisits,
   getVisitById,
   loginUser,
+  decideVisit,
 } from "./api";
 
 function App() {
@@ -43,6 +44,11 @@ function App() {
 
   const [selectedVisit, setSelectedVisit] = useState(null);
   const [detailsError, setDetailsError] = useState("");
+
+
+  const [decisionRemark, setDecisionRemark] = useState("");
+const [decisionError, setDecisionError] = useState("");
+const [decisionLoading, setDecisionLoading] = useState(false);
 
   useEffect(() => {
     if (!user || !token) {
@@ -191,6 +197,51 @@ function App() {
       setDetailsError(error.message);
     }
   };
+
+  const handleDecision = async (decision) => {
+  if (
+    decision === "REJECTED" &&
+    !decisionRemark.trim()
+  ) {
+    setDecisionError("Rejection remark is required.");
+    return;
+  }
+
+  setDecisionError("");
+  setDecisionLoading(true);
+
+  try {
+    await decideVisit(
+      token,
+      selectedVisit.visit.id,
+      decision,
+      decisionRemark
+    );
+
+    const updatedVisit = await getVisitById(
+      token,
+      selectedVisit.visit.id
+    );
+
+    setSelectedVisit(updatedVisit);
+    setDecisionRemark("");
+
+    const data = await getVisits({
+      token,
+      status,
+      locationId,
+      page,
+      limit: 5,
+    });
+
+    setVisits(data.data);
+  } catch (error) {
+    setDecisionError(error.message);
+  } finally {
+    setDecisionLoading(false);
+  }
+};
+
 
   if (!user) {
     return (
@@ -484,6 +535,43 @@ function App() {
               ))}
             </ul>
           )}
+
+          {user.role === "HQ_APPROVER" &&
+  selectedVisit.visit.status === "PENDING" && (
+    <div>
+      <h3>Approval Decision</h3>
+
+      <textarea
+        placeholder="Optional for approval, required for rejection"
+        value={decisionRemark}
+        onChange={(event) =>
+          setDecisionRemark(event.target.value)
+        }
+      />
+
+      <br />
+      <br />
+
+      <button
+        disabled={decisionLoading}
+        onClick={() => handleDecision("APPROVED")}
+      >
+        Approve
+      </button>
+
+      {" "}
+
+      <button
+        disabled={decisionLoading}
+        onClick={() => handleDecision("REJECTED")}
+      >
+        Reject
+      </button>
+
+      {decisionError && <p>{decisionError}</p>}
+    </div>
+  )}
+
         </div>
       )}
     </div>
