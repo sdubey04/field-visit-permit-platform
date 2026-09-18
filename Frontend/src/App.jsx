@@ -6,6 +6,9 @@ import {
   getVisitById,
   loginUser,
   decideVisit,
+  completeVisit,
+submitVisit,
+// updateVisit,
 } from "./api";
 
 function App() {
@@ -49,6 +52,11 @@ function App() {
   const [decisionRemark, setDecisionRemark] = useState("");
 const [decisionError, setDecisionError] = useState("");
 const [decisionLoading, setDecisionLoading] = useState(false);
+
+
+  const [actionError, setActionError] = useState("");
+const [actionLoading, setActionLoading] = useState(false);
+
 
   useEffect(() => {
     if (!user || !token) {
@@ -241,6 +249,69 @@ const [decisionLoading, setDecisionLoading] = useState(false);
     setDecisionLoading(false);
   }
 };
+
+
+  const handleSubmitVisit = async () => {
+  setActionError("");
+  setActionLoading(true);
+
+  try {
+    await submitVisit(token, selectedVisit.visit.id);
+
+    const updated = await getVisitById(
+      token,
+      selectedVisit.visit.id
+    );
+
+    setSelectedVisit(updated);
+
+    const data = await getVisits({
+      token,
+      status,
+      locationId,
+      page,
+      limit: 5,
+    });
+
+    setVisits(data.data);
+  } catch (error) {
+    setActionError(error.message);
+  } finally {
+    setActionLoading(false);
+  }
+};
+
+
+const handleCompleteVisit = async () => {
+  setActionError("");
+  setActionLoading(true);
+
+  try {
+    await completeVisit(token, selectedVisit.visit.id);
+
+    const updated = await getVisitById(
+      token,
+      selectedVisit.visit.id
+    );
+
+    setSelectedVisit(updated);
+
+    const data = await getVisits({
+      token,
+      status,
+      locationId,
+      page,
+      limit: 5,
+    });
+
+    setVisits(data.data);
+  } catch (error) {
+    setActionError(error.message);
+  } finally {
+    setActionLoading(false);
+  }
+};
+
 
 
   if (!user) {
@@ -571,6 +642,47 @@ const [decisionLoading, setDecisionLoading] = useState(false);
       {decisionError && <p>{decisionError}</p>}
     </div>
   )}
+
+
+      {user.role === "FIELD_OFFICER" &&
+  selectedVisit.visit.created_by === user.id &&
+  selectedVisit.visit.status === "DRAFT" && (
+    <button
+      disabled={actionLoading}
+      onClick={handleSubmitVisit}
+    >
+      Submit Visit
+    </button>
+  )}
+
+
+    {user.role === "FIELD_OFFICER" &&
+  selectedVisit.visit.created_by === user.id &&
+  selectedVisit.visit.status === "REJECTED" && (
+    <button
+      disabled={actionLoading}
+      onClick={handleSubmitVisit}
+    >
+      Resubmit Visit
+    </button>
+  )}
+
+
+
+
+      {user.role === "FIELD_OFFICER" &&
+  selectedVisit.visit.created_by === user.id &&
+  selectedVisit.visit.status === "APPROVED" && (
+    <button
+      disabled={actionLoading}
+      onClick={handleCompleteVisit}
+    >
+      Mark Completed
+    </button>
+  )}
+
+
+      {actionError && <p>{actionError}</p>}
 
         </div>
       )}
