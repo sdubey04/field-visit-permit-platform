@@ -3,12 +3,13 @@ import {
   createVisit,
   getLocations,
   getVisits,
+  getVisitById,
   loginUser,
 } from "./api";
 
 function App() {
   const [user, setUser] = useState(
-    JSON.parse(localStorage.getItem("user")) || null
+    JSON.parse(localStorage.getItem("user")) || null,
   );
 
   const [email, setEmail] = useState("");
@@ -28,18 +29,20 @@ function App() {
 
   const token = localStorage.getItem("token");
 
+  const [visitForm, setVisitForm] = useState({
+    title: "",
+    purpose: "",
+    location_id: "",
+    planned_date: "",
+    estimated_cost: "",
+  });
 
-const [visitForm, setVisitForm] = useState({
-  title: "",
-  purpose: "",
-  location_id: "",
-  planned_date: "",
-  estimated_cost: "",
-});
+  const [createError, setCreateError] = useState("");
+  const [createSuccess, setCreateSuccess] = useState("");
+  const [creating, setCreating] = useState(false);
 
-const [createError, setCreateError] = useState("");
-const [createSuccess, setCreateSuccess] = useState("");
-const [creating, setCreating] = useState(false);
+  const [selectedVisit, setSelectedVisit] = useState(null);
+  const [detailsError, setDetailsError] = useState("");
 
   useEffect(() => {
     if (!user || !token) {
@@ -125,61 +128,69 @@ const [creating, setCreating] = useState(false);
     setPage(1);
   };
 
-
   const handleVisitFormChange = (event) => {
-  const { name, value } = event.target;
+    const { name, value } = event.target;
 
-  setVisitForm((current) => ({
-    ...current,
-    [name]: value,
-  }));
-};
+    setVisitForm((current) => ({
+      ...current,
+      [name]: value,
+    }));
+  };
 
-const handleCreateVisit = async (event) => {
-  event.preventDefault();
+  const handleCreateVisit = async (event) => {
+    event.preventDefault();
 
-  setCreateError("");
-  setCreateSuccess("");
-  setCreating(true);
+    setCreateError("");
+    setCreateSuccess("");
+    setCreating(true);
 
-  try {
-    await createVisit(token, {
-      title: visitForm.title,
-      purpose: visitForm.purpose,
-      location_id: Number(visitForm.location_id),
-      planned_date: visitForm.planned_date,
-      estimated_cost: Number(visitForm.estimated_cost),
-    });
+    try {
+      await createVisit(token, {
+        title: visitForm.title,
+        purpose: visitForm.purpose,
+        location_id: Number(visitForm.location_id),
+        planned_date: visitForm.planned_date,
+        estimated_cost: Number(visitForm.estimated_cost),
+      });
 
-    setVisitForm({
-      title: "",
-      purpose: "",
-      location_id: "",
-      planned_date: "",
-      estimated_cost: "",
-    });
+      setVisitForm({
+        title: "",
+        purpose: "",
+        location_id: "",
+        planned_date: "",
+        estimated_cost: "",
+      });
 
-    setCreateSuccess("Visit created successfully as DRAFT.");
+      setCreateSuccess("Visit created successfully as DRAFT.");
 
-    setPage(1);
+      setPage(1);
 
-    const data = await getVisits({
-      token,
-      status,
-      locationId,
-      page: 1,
-      limit: 5,
-    });
+      const data = await getVisits({
+        token,
+        status,
+        locationId,
+        page: 1,
+        limit: 5,
+      });
 
-    setVisits(data.data);
-  } catch (error) {
-    setCreateError(error.message);
-  } finally {
-    setCreating(false);
-  }
-};
+      setVisits(data.data);
+    } catch (error) {
+      setCreateError(error.message);
+    } finally {
+      setCreating(false);
+    }
+  };
 
+  const handleViewVisit = async (visitId) => {
+    setDetailsError("");
 
+    try {
+      const data = await getVisitById(token, visitId);
+      setSelectedVisit(data);
+    } catch (error) {
+      setDetailsError(error.message);
+    }
+  };
 
   if (!user) {
     return (
@@ -237,104 +248,102 @@ const handleCreateVisit = async (event) => {
 
       <hr />
 
+      {user.role === "FIELD_OFFICER" && (
+        <>
+          <h2>Create Visit</h2>
 
-{user.role === "FIELD_OFFICER" && (
-  <>
-    <h2>Create Visit</h2>
+          <form onSubmit={handleCreateVisit}>
+            <div>
+              <label>Title</label>
+              <br />
+              <input
+                name="title"
+                value={visitForm.title}
+                onChange={handleVisitFormChange}
+                required
+              />
+            </div>
 
-    <form onSubmit={handleCreateVisit}>
-      <div>
-        <label>Title</label>
-        <br />
-        <input
-          name="title"
-          value={visitForm.title}
-          onChange={handleVisitFormChange}
-          required
-        />
-      </div>
+            <br />
 
-      <br />
+            <div>
+              <label>Purpose</label>
+              <br />
+              <textarea
+                name="purpose"
+                value={visitForm.purpose}
+                onChange={handleVisitFormChange}
+                required
+              />
+            </div>
 
-      <div>
-        <label>Purpose</label>
-        <br />
-        <textarea
-          name="purpose"
-          value={visitForm.purpose}
-          onChange={handleVisitFormChange}
-          required
-        />
-      </div>
+            <br />
 
-      <br />
+            <div>
+              <label>Location</label>
+              <br />
 
-      <div>
-        <label>Location</label>
-        <br />
+              <select
+                name="location_id"
+                value={visitForm.location_id}
+                onChange={handleVisitFormChange}
+                required
+              >
+                <option value="">Select location</option>
 
-        <select
-          name="location_id"
-          value={visitForm.location_id}
-          onChange={handleVisitFormChange}
-          required
-        >
-          <option value="">Select location</option>
+                {locations.map((location) => (
+                  <option key={location.id} value={location.id}>
+                    {location.name}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-          {locations.map((location) => (
-            <option key={location.id} value={location.id}>
-              {location.name}
-            </option>
-          ))}
-        </select>
-      </div>
+            <br />
 
-      <br />
+            <div>
+              <label>Planned Date</label>
+              <br />
 
-      <div>
-        <label>Planned Date</label>
-        <br />
+              <input
+                type="date"
+                name="planned_date"
+                value={visitForm.planned_date}
+                onChange={handleVisitFormChange}
+                required
+              />
+            </div>
 
-        <input
-          type="date"
-          name="planned_date"
-          value={visitForm.planned_date}
-          onChange={handleVisitFormChange}
-          required
-        />
-      </div>
+            <br />
 
-      <br />
+            <div>
+              <label>Estimated Cost</label>
+              <br />
 
-      <div>
-        <label>Estimated Cost</label>
-        <br />
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                name="estimated_cost"
+                value={visitForm.estimated_cost}
+                onChange={handleVisitFormChange}
+                required
+              />
+            </div>
 
-        <input
-          type="number"
-          min="0"
-          step="0.01"
-          name="estimated_cost"
-          value={visitForm.estimated_cost}
-          onChange={handleVisitFormChange}
-          required
-        />
-      </div>
+            <br />
 
-      <br />
+            <button type="submit" disabled={creating}>
+              {creating ? "Creating..." : "Create Visit"}
+            </button>
+          </form>
 
-      <button type="submit" disabled={creating}>
-        {creating ? "Creating..." : "Create Visit"}
-      </button>
-    </form>
+          {createError && <p>{createError}</p>}
+          {createSuccess && <p>{createSuccess}</p>}
 
-    {createError && <p>{createError}</p>}
-    {createSuccess && <p>{createSuccess}</p>}
-
-    <hr />
-  </>
-)}
-
+          <hr />
+        </>
+      )}
 
       <h2>Visits</h2>
 
@@ -352,10 +361,7 @@ const handleCreateVisit = async (event) => {
 
         <label> Location: </label>
 
-        <select
-          value={locationId}
-          onChange={handleLocationChange}
-        >
+        <select value={locationId} onChange={handleLocationChange}>
           <option value="">All</option>
 
           {locations.map((location) => (
@@ -386,6 +392,7 @@ const handleCreateVisit = async (event) => {
               <th>Estimated Cost</th>
               <th>Status</th>
               <th>Created By</th>
+              <th>Action</th>
             </tr>
           </thead>
 
@@ -398,6 +405,13 @@ const handleCreateVisit = async (event) => {
                 <td>{visit.estimated_cost}</td>
                 <td>{visit.status}</td>
                 <td>{visit.created_by_name}</td>
+
+                <td>
+                  <button onClick={() => handleViewVisit(visit.id)}>
+                    View
+                  </button>
+                
+                </td>
               </tr>
             ))}
           </tbody>
@@ -421,6 +435,57 @@ const handleCreateVisit = async (event) => {
       >
         Next
       </button>
+
+      {detailsError && <p>{detailsError}</p>}
+
+      {selectedVisit && (
+        <div>
+          <hr />
+
+          <h2>Visit Details</h2>
+
+          <p>
+            <strong>Title:</strong> {selectedVisit.visit.title}
+          </p>
+
+          <p>
+            <strong>Purpose:</strong> {selectedVisit.visit.purpose}
+          </p>
+
+          <p>
+            <strong>Location:</strong> {selectedVisit.visit.location_name}
+          </p>
+
+          <p>
+            <strong>Planned Date:</strong> {selectedVisit.visit.planned_date}
+          </p>
+
+          <p>
+            <strong>Estimated Cost:</strong>{" "}
+            {selectedVisit.visit.estimated_cost}
+          </p>
+
+          <p>
+            <strong>Status:</strong> {selectedVisit.visit.status}
+          </p>
+
+          <h3>Decision History</h3>
+
+          {selectedVisit.decision_history.length === 0 ? (
+            <p>No decisions yet.</p>
+          ) : (
+            <ul>
+              {selectedVisit.decision_history.map((decision) => (
+                <li key={decision.id}>
+                  <strong>{decision.decision}</strong> —{" "}
+                  {decision.decided_by_name}
+                  {decision.remark && ` — ${decision.remark}`}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
     </div>
   );
 }

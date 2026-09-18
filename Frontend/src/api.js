@@ -95,3 +95,20 @@ export const createVisit = async (token, visitData) => {
 
   return data;
 };
+
+
+export const getVisitById = async (token, visitId) => {
+  const response = await fetch(`${API_BASE_URL}/visits/${visitId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to fetch visit");
+  }
+
+  return data;
+};
