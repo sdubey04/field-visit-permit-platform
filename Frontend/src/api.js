@@ -199,3 +199,4 @@ export const completeVisit = async (token, visitId) => {
 
   return data;
 };
+

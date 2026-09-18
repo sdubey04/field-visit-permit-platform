@@ -8,7 +8,7 @@ import {
   decideVisit,
   completeVisit,
 submitVisit,
-// updateVisit,
+updateVisit,
 } from "./api";
 
 function App() {
@@ -57,6 +57,7 @@ const [decisionLoading, setDecisionLoading] = useState(false);
   const [actionError, setActionError] = useState("");
 const [actionLoading, setActionLoading] = useState(false);
 
+  const [editingVisit, setEditingVisit] = useState(null);
 
   useEffect(() => {
     if (!user || !token) {
@@ -313,6 +314,74 @@ const handleCompleteVisit = async () => {
 };
 
 
+    const handleEditVisit = () => {
+  const visit = selectedVisit.visit;
+
+  setEditingVisit(visit);
+
+  setVisitForm({
+    title: visit.title,
+    purpose: visit.purpose,
+    location_id: String(visit.location_id),
+    planned_date: visit.planned_date,
+    estimated_cost: visit.estimated_cost,
+  });
+
+  setCreateError("");
+  setCreateSuccess("");
+};
+
+
+const handleUpdateVisit = async (event) => {
+  event.preventDefault();
+
+  setCreateError("");
+  setCreateSuccess("");
+  setCreating(true);
+
+  try {
+    await updateVisit(token, editingVisit.id, {
+      title: visitForm.title,
+      purpose: visitForm.purpose,
+      location_id: Number(visitForm.location_id),
+      planned_date: visitForm.planned_date,
+      estimated_cost: Number(visitForm.estimated_cost),
+    });
+
+    const updated = await getVisitById(
+      token,
+      editingVisit.id
+    );
+
+    setSelectedVisit(updated);
+    setEditingVisit(null);
+
+    setVisitForm({
+      title: "",
+      purpose: "",
+      location_id: "",
+      planned_date: "",
+      estimated_cost: "",
+    });
+
+    setCreateSuccess("Visit updated successfully.");
+
+    const data = await getVisits({
+      token,
+      status,
+      locationId,
+      page,
+      limit: 5,
+    });
+
+    setVisits(data.data);
+  } catch (error) {
+    setCreateError(error.message);
+  } finally {
+    setCreating(false);
+  }
+};
+
 
   if (!user) {
     return (
@@ -372,9 +441,9 @@ const handleCompleteVisit = async () => {
 
       {user.role === "FIELD_OFFICER" && (
         <>
-          <h2>Create Visit</h2>
+          <h2>{editingVisit ? "Edit Visit" : "Create Visit"}</h2>
 
-          <form onSubmit={handleCreateVisit}>
+          <form onSubmit={editingVisit ? handleUpdateVisit : handleCreateVisit}>
             <div>
               <label>Title</label>
               <br />
@@ -456,8 +525,31 @@ const handleCompleteVisit = async () => {
             <br />
 
             <button type="submit" disabled={creating}>
-              {creating ? "Creating..." : "Create Visit"}
+              {creating
+    ? "Saving..."
+    : editingVisit
+    ? "Save Changes"
+    : "Create Visit"}
             </button>
+            
+            {editingVisit && (
+  <button
+    type="button"
+    onClick={() => {
+      setEditingVisit(null);
+
+      setVisitForm({
+        title: "",
+        purpose: "",
+        location_id: "",
+        planned_date: "",
+        estimated_cost: "",
+      });
+    }}
+  >
+    Cancel
+  </button>
+)}
           </form>
 
           {createError && <p>{createError}</p>}
@@ -642,6 +734,16 @@ const handleCompleteVisit = async () => {
       {decisionError && <p>{decisionError}</p>}
     </div>
   )}
+
+
+    {user.role === "FIELD_OFFICER" &&
+  selectedVisit.visit.created_by === user.id &&
+  ["DRAFT", "REJECTED"].includes(selectedVisit.visit.status) && (
+    <button onClick={handleEditVisit}>
+      Edit Visit
+    </button>
+  )}
+
 
 
       {user.role === "FIELD_OFFICER" &&
