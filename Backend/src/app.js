@@ -8,6 +8,7 @@ const authenticate = require("./middleware/auth.middleware");
 const authorize = require("./middleware/authorize.middleware");
 const visitRoutes = require("./routes/visit.routes");
 const summaryRoutes = require("./routes/summary.routes");
+const locationRoutes = require("./routes/location.routes");
 
 const app = express();
 
@@ -18,6 +19,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/visits", visitRoutes);
 
 app.use("/api/summary", summaryRoutes);
+
+app.use("/api/locations", locationRoutes);
 
 app.get("/", (req, res) => {
   res.json({ message: "Field Visit API is running" });
