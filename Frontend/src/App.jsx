@@ -1,14 +1,15 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
+  completeVisit,
   createVisit,
+  decideVisit,
   getLocations,
+  getSummary,
   getVisits,
   getVisitById,
   loginUser,
-  decideVisit,
-  completeVisit,
-submitVisit,
-updateVisit,
+  submitVisit,
+  updateVisit,
 } from "./api";
 
 function App() {
@@ -48,16 +49,46 @@ function App() {
   const [selectedVisit, setSelectedVisit] = useState(null);
   const [detailsError, setDetailsError] = useState("");
 
-
   const [decisionRemark, setDecisionRemark] = useState("");
-const [decisionError, setDecisionError] = useState("");
-const [decisionLoading, setDecisionLoading] = useState(false);
-
+  const [decisionError, setDecisionError] = useState("");
+  const [decisionLoading, setDecisionLoading] = useState(false);
 
   const [actionError, setActionError] = useState("");
-const [actionLoading, setActionLoading] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const [editingVisit, setEditingVisit] = useState(null);
+
+  const [summary, setSummary] = useState(null);
+  const [summaryError, setSummaryError] = useState("");
+  const [summaryLoading, setSummaryLoading] = useState(false);
+
+  const loadSummary = useCallback(async () => {
+    if (!token) {
+      return;
+    }
+
+    setSummaryLoading(true);
+    setSummaryError("");
+
+    try {
+      const data = await getSummary(token);
+      setSummary(data);
+    } catch (error) {
+      setSummaryError(error.message);
+    } finally {
+      setSummaryLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    if (!user || !token) {
+      return;
+    }
+
+    if (user.role === "HQ_APPROVER" || user.role === "ADMIN") {
+      loadSummary();
+    }
+  }, [user, token, loadSummary]);
 
   useEffect(() => {
     if (!user || !token) {
@@ -208,180 +239,160 @@ const [actionLoading, setActionLoading] = useState(false);
   };
 
   const handleDecision = async (decision) => {
-  if (
-    decision === "REJECTED" &&
-    !decisionRemark.trim()
-  ) {
-    setDecisionError("Rejection remark is required.");
-    return;
-  }
+    if (decision === "REJECTED" && !decisionRemark.trim()) {
+      setDecisionError("Rejection remark is required.");
+      return;
+    }
 
-  setDecisionError("");
-  setDecisionLoading(true);
+    setDecisionError("");
+    setDecisionLoading(true);
 
-  try {
-    await decideVisit(
-      token,
-      selectedVisit.visit.id,
-      decision,
-      decisionRemark
-    );
+    try {
+      await decideVisit(
+        token,
+        selectedVisit.visit.id,
+        decision,
+        decisionRemark,
+      );
 
-    const updatedVisit = await getVisitById(
-      token,
-      selectedVisit.visit.id
-    );
+      const updatedVisit = await getVisitById(token, selectedVisit.visit.id);
 
-    setSelectedVisit(updatedVisit);
-    setDecisionRemark("");
+      setSelectedVisit(updatedVisit);
+      setDecisionRemark("");
 
-    const data = await getVisits({
-      token,
-      status,
-      locationId,
-      page,
-      limit: 5,
-    });
+      const data = await getVisits({
+        token,
+        status,
+        locationId,
+        page,
+        limit: 5,
+      });
 
-    setVisits(data.data);
-  } catch (error) {
-    setDecisionError(error.message);
-  } finally {
-    setDecisionLoading(false);
-  }
-};
-
+      setVisits(data.data);
+    } catch (error) {
+      setDecisionError(error.message);
+    } finally {
+      setDecisionLoading(false);
+    }
+  };
 
   const handleSubmitVisit = async () => {
-  setActionError("");
-  setActionLoading(true);
+    setActionError("");
+    setActionLoading(true);
 
-  try {
-    await submitVisit(token, selectedVisit.visit.id);
+    try {
+      await submitVisit(token, selectedVisit.visit.id);
 
-    const updated = await getVisitById(
-      token,
-      selectedVisit.visit.id
-    );
+      const updated = await getVisitById(token, selectedVisit.visit.id);
 
-    setSelectedVisit(updated);
+      setSelectedVisit(updated);
 
-    const data = await getVisits({
-      token,
-      status,
-      locationId,
-      page,
-      limit: 5,
-    });
+      const data = await getVisits({
+        token,
+        status,
+        locationId,
+        page,
+        limit: 5,
+      });
 
-    setVisits(data.data);
-  } catch (error) {
-    setActionError(error.message);
-  } finally {
-    setActionLoading(false);
-  }
-};
+      setVisits(data.data);
+    } catch (error) {
+      setActionError(error.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
+  const handleCompleteVisit = async () => {
+    setActionError("");
+    setActionLoading(true);
 
-const handleCompleteVisit = async () => {
-  setActionError("");
-  setActionLoading(true);
+    try {
+      await completeVisit(token, selectedVisit.visit.id);
 
-  try {
-    await completeVisit(token, selectedVisit.visit.id);
+      const updated = await getVisitById(token, selectedVisit.visit.id);
 
-    const updated = await getVisitById(
-      token,
-      selectedVisit.visit.id
-    );
+      setSelectedVisit(updated);
 
-    setSelectedVisit(updated);
+      const data = await getVisits({
+        token,
+        status,
+        locationId,
+        page,
+        limit: 5,
+      });
 
-    const data = await getVisits({
-      token,
-      status,
-      locationId,
-      page,
-      limit: 5,
-    });
+      setVisits(data.data);
+    } catch (error) {
+      setActionError(error.message);
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
-    setVisits(data.data);
-  } catch (error) {
-    setActionError(error.message);
-  } finally {
-    setActionLoading(false);
-  }
-};
+  const handleEditVisit = () => {
+    const visit = selectedVisit.visit;
 
-
-    const handleEditVisit = () => {
-  const visit = selectedVisit.visit;
-
-  setEditingVisit(visit);
-
-  setVisitForm({
-    title: visit.title,
-    purpose: visit.purpose,
-    location_id: String(visit.location_id),
-    planned_date: visit.planned_date,
-    estimated_cost: visit.estimated_cost,
-  });
-
-  setCreateError("");
-  setCreateSuccess("");
-};
-
-
-const handleUpdateVisit = async (event) => {
-  event.preventDefault();
-
-  setCreateError("");
-  setCreateSuccess("");
-  setCreating(true);
-
-  try {
-    await updateVisit(token, editingVisit.id, {
-      title: visitForm.title,
-      purpose: visitForm.purpose,
-      location_id: Number(visitForm.location_id),
-      planned_date: visitForm.planned_date,
-      estimated_cost: Number(visitForm.estimated_cost),
-    });
-
-    const updated = await getVisitById(
-      token,
-      editingVisit.id
-    );
-
-    setSelectedVisit(updated);
-    setEditingVisit(null);
+    setEditingVisit(visit);
 
     setVisitForm({
-      title: "",
-      purpose: "",
-      location_id: "",
-      planned_date: "",
-      estimated_cost: "",
+      title: visit.title,
+      purpose: visit.purpose,
+      location_id: String(visit.location_id),
+      planned_date: visit.planned_date,
+      estimated_cost: visit.estimated_cost,
     });
 
-    setCreateSuccess("Visit updated successfully.");
+    setCreateError("");
+    setCreateSuccess("");
+  };
 
-    const data = await getVisits({
-      token,
-      status,
-      locationId,
-      page,
-      limit: 5,
-    });
+  const handleUpdateVisit = async (event) => {
+    event.preventDefault();
 
-    setVisits(data.data);
-  } catch (error) {
-    setCreateError(error.message);
-  } finally {
-    setCreating(false);
-  }
-};
+    setCreateError("");
+    setCreateSuccess("");
+    setCreating(true);
 
+    try {
+      await updateVisit(token, editingVisit.id, {
+        title: visitForm.title,
+        purpose: visitForm.purpose,
+        location_id: Number(visitForm.location_id),
+        planned_date: visitForm.planned_date,
+        estimated_cost: Number(visitForm.estimated_cost),
+      });
+
+      const updated = await getVisitById(token, editingVisit.id);
+
+      setSelectedVisit(updated);
+      setEditingVisit(null);
+
+      setVisitForm({
+        title: "",
+        purpose: "",
+        location_id: "",
+        planned_date: "",
+        estimated_cost: "",
+      });
+
+      setCreateSuccess("Visit updated successfully.");
+
+      const data = await getVisits({
+        token,
+        status,
+        locationId,
+        page,
+        limit: 5,
+      });
+
+      setVisits(data.data);
+    } catch (error) {
+      setCreateError(error.message);
+    } finally {
+      setCreating(false);
+    }
+  };
 
   if (!user) {
     return (
@@ -526,34 +537,96 @@ const handleUpdateVisit = async (event) => {
 
             <button type="submit" disabled={creating}>
               {creating
-    ? "Saving..."
-    : editingVisit
-    ? "Save Changes"
-    : "Create Visit"}
+                ? "Saving..."
+                : editingVisit
+                  ? "Save Changes"
+                  : "Create Visit"}
             </button>
-            
-            {editingVisit && (
-  <button
-    type="button"
-    onClick={() => {
-      setEditingVisit(null);
 
-      setVisitForm({
-        title: "",
-        purpose: "",
-        location_id: "",
-        planned_date: "",
-        estimated_cost: "",
-      });
-    }}
-  >
-    Cancel
-  </button>
-)}
+            {editingVisit && (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingVisit(null);
+
+                  setVisitForm({
+                    title: "",
+                    purpose: "",
+                    location_id: "",
+                    planned_date: "",
+                    estimated_cost: "",
+                  });
+                }}
+              >
+                Cancel
+              </button>
+            )}
           </form>
 
           {createError && <p>{createError}</p>}
           {createSuccess && <p>{createSuccess}</p>}
+
+          <hr />
+        </>
+      )}
+
+      {(user.role === "HQ_APPROVER" || user.role === "ADMIN") && (
+        <>
+          <h2>HQ Summary</h2>
+
+          {summaryLoading && <p>Loading summary...</p>}
+
+          {summaryError && <p>{summaryError}</p>}
+
+          {summary && (
+            <div>
+              <h3>Visits by Status</h3>
+
+              <table border="1" cellPadding="8">
+                <thead>
+                  <tr>
+                    <th>Status</th>
+                    <th>Count</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {summary.counts_by_status.map((item) => (
+                    <tr key={item.status}>
+                      <td>{item.status}</td>
+                      <td>{item.count}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <h3>Breakdown by Location</h3>
+
+              <table border="1" cellPadding="8">
+                <thead>
+                  <tr>
+                    <th>Location</th>
+                    <th>Visit Count</th>
+                    <th>Total Planned Cost</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {summary.by_location.map((item) => (
+                    <tr key={item.location_id}>
+                      <td>{item.location_name}</td>
+                      <td>{item.visit_count}</td>
+                      <td>{item.total_planned_cost}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <br />
+
+              <button onClick={loadSummary}>Refresh Summary</button>
+            </div>
+          )}
 
           <hr />
         </>
@@ -624,7 +697,6 @@ const handleUpdateVisit = async (event) => {
                   <button onClick={() => handleViewVisit(visit.id)}>
                     View
                   </button>
-                
                 </td>
               </tr>
             ))}
@@ -700,92 +772,63 @@ const handleUpdateVisit = async (event) => {
           )}
 
           {user.role === "HQ_APPROVER" &&
-  selectedVisit.visit.status === "PENDING" && (
-    <div>
-      <h3>Approval Decision</h3>
+            selectedVisit.visit.status === "PENDING" && (
+              <div>
+                <h3>Approval Decision</h3>
+                <textarea
+                  placeholder="Optional for approval, required for rejection"
+                  value={decisionRemark}
+                  onChange={(event) => setDecisionRemark(event.target.value)}
+                />
+                <br />
+                <br />
+                <button
+                  disabled={decisionLoading}
+                  onClick={() => handleDecision("APPROVED")}
+                >
+                  Approve
+                </button>{" "}
+                <button
+                  disabled={decisionLoading}
+                  onClick={() => handleDecision("REJECTED")}
+                >
+                  Reject
+                </button>
+                {decisionError && <p>{decisionError}</p>}
+              </div>
+            )}
 
-      <textarea
-        placeholder="Optional for approval, required for rejection"
-        value={decisionRemark}
-        onChange={(event) =>
-          setDecisionRemark(event.target.value)
-        }
-      />
+          {user.role === "FIELD_OFFICER" &&
+            selectedVisit.visit.created_by === user.id &&
+            ["DRAFT", "REJECTED"].includes(selectedVisit.visit.status) && (
+              <button onClick={handleEditVisit}>Edit Visit</button>
+            )}
 
-      <br />
-      <br />
+          {user.role === "FIELD_OFFICER" &&
+            selectedVisit.visit.created_by === user.id &&
+            selectedVisit.visit.status === "DRAFT" && (
+              <button disabled={actionLoading} onClick={handleSubmitVisit}>
+                Submit Visit
+              </button>
+            )}
 
-      <button
-        disabled={decisionLoading}
-        onClick={() => handleDecision("APPROVED")}
-      >
-        Approve
-      </button>
+          {user.role === "FIELD_OFFICER" &&
+            selectedVisit.visit.created_by === user.id &&
+            selectedVisit.visit.status === "REJECTED" && (
+              <button disabled={actionLoading} onClick={handleSubmitVisit}>
+                Resubmit Visit
+              </button>
+            )}
 
-      {" "}
+          {user.role === "FIELD_OFFICER" &&
+            selectedVisit.visit.created_by === user.id &&
+            selectedVisit.visit.status === "APPROVED" && (
+              <button disabled={actionLoading} onClick={handleCompleteVisit}>
+                Mark Completed
+              </button>
+            )}
 
-      <button
-        disabled={decisionLoading}
-        onClick={() => handleDecision("REJECTED")}
-      >
-        Reject
-      </button>
-
-      {decisionError && <p>{decisionError}</p>}
-    </div>
-  )}
-
-
-    {user.role === "FIELD_OFFICER" &&
-  selectedVisit.visit.created_by === user.id &&
-  ["DRAFT", "REJECTED"].includes(selectedVisit.visit.status) && (
-    <button onClick={handleEditVisit}>
-      Edit Visit
-    </button>
-  )}
-
-
-
-      {user.role === "FIELD_OFFICER" &&
-  selectedVisit.visit.created_by === user.id &&
-  selectedVisit.visit.status === "DRAFT" && (
-    <button
-      disabled={actionLoading}
-      onClick={handleSubmitVisit}
-    >
-      Submit Visit
-    </button>
-  )}
-
-
-    {user.role === "FIELD_OFFICER" &&
-  selectedVisit.visit.created_by === user.id &&
-  selectedVisit.visit.status === "REJECTED" && (
-    <button
-      disabled={actionLoading}
-      onClick={handleSubmitVisit}
-    >
-      Resubmit Visit
-    </button>
-  )}
-
-
-
-
-      {user.role === "FIELD_OFFICER" &&
-  selectedVisit.visit.created_by === user.id &&
-  selectedVisit.visit.status === "APPROVED" && (
-    <button
-      disabled={actionLoading}
-      onClick={handleCompleteVisit}
-    >
-      Mark Completed
-    </button>
-  )}
-
-
-      {actionError && <p>{actionError}</p>}
-
+          {actionError && <p>{actionError}</p>}
         </div>
       )}
     </div>

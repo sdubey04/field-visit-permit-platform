@@ -200,3 +200,19 @@ export const completeVisit = async (token, visitId) => {
   return data;
 };
 
+export const getSummary = async (token) => {
+  const response = await fetch(`${API_BASE_URL}/summary`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "Failed to fetch summary");
+  }
+
+  return data;
+};
+
