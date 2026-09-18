@@ -18,8 +18,8 @@ CREATE TABLE locations (
 
 CREATE TABLE visits (
     id SERIAL PRIMARY KEY,
-    title VARCHAR(200) NOT NULL,
-    purpose TEXT NOT NULL,
+   title VARCHAR(200) NOT NULL CHECK (BTRIM(title) <> ''),
+   purpose TEXT NOT NULL CHECK (BTRIM(purpose) <> ''),
     location_id INTEGER NOT NULL REFERENCES locations(id),
     planned_date DATE NOT NULL,
     estimated_cost NUMERIC(12, 2) NOT NULL CHECK (estimated_cost >= 0),
@@ -45,6 +45,10 @@ CREATE TABLE approval_decisions (
         decision IN ('APPROVED', 'REJECTED')
     ),
     remark TEXT,
+    CHECK (
+        decision = 'APPROVED'
+        OR NULLIF(BTRIM(remark), '') IS NOT NULL
+    ),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
