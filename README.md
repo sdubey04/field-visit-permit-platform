@@ -46,7 +46,7 @@ The application provides:
 ## 2. Project Structure
 
 ```text
-field-visit-operations-platform/
+field-visit-permit-platform/
 │
 ├── Backend/
 │   ├── src/
